@@ -100,17 +100,56 @@ instacart %>%
   mutate(order_dow = recode(order_dow, "0" = "Sunday", "1" = "Monday", "2" = "Tuesday", "3" = "Wednesday", 
                    "4" = "Thursday", "5" = "Friday", "6" = "Saturday")) %>%
   pivot_wider(names_from = "order_dow", values_from = "mean_hour") %>%
-  knitr::kable(digit = 0, digits = 2, caption = "mean hour of given product are ordered in a week")
+  knitr::kable(digits = 2, caption = "mean hour of given product are ordered in a week")
 ```
 
 
 # Problem 2
 
+Load, tidy, and wrangle the accel data. 
 
+```{r}
+p2_df1 <- read_csv("data/accel_data.csv") %>%
+  janitor::clean_names() %>%
+  mutate(
+    weekday_weekend = recode(day, "Sunday" = 0, "Saturday" = 0, "Monday" = 1, "Tuesday" = 1, "Wednesday" = 1, "Thursday" = 1, "Friday" = 1)) %>%
+  select(week, day_id, day, weekday_weekend, everything()) %>%
+  rename_all(~stringr::str_replace(.,"activity_","")) %>%
+  pivot_longer("1":"1440", names_to = "n_min", values_to = "n_activity") %>%
+  mutate(n_min = as.numeric(n_min))
+  
+head(p2_df1)
+```
 
+The p2_df1 dataset has `r nrow(p2_df1)` rows and `r ncol(p2_df1)` variables. The variables are week, day id, day, weekday or weekend (weekday is 1, weekend is 0), minute number, and number of activity.
 
+#### Table of total activity in a day
 
+Generate a new data from p2_df1 the tidied dataset that agregate the number of activity in a day.
 
+```{r}
+p2_df2 <- p2_df1 %>% 
+  group_by(week, day_id, day) %>%
+  summarise(tot_activity = sum(n_activity))
+
+table_1 <- p2_df2 %>%
+   knitr::kable()
+
+table_1
+```
+
+Create a trend plot to see if there is any pattern.
+
+```{r}
+p2_df2$day <- factor(p2_df2$day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")) 
+
+p2_df2 %>% ggplot(aes(x = day, y = tot_activity, color = week, group = week)) +
+  geom_point() + geom_line() + facet_grid(~week) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), 
+        legend.position = "none")
+```
+
+Based on the trend plot, we can see the patient reached to peak on weekend (either Saturday or Sunday) in the first two weeks, and the patient was more active on weekday in the last three weeks.
 
 
 
