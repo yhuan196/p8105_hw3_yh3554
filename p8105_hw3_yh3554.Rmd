@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(knitr)
+library(viridis)
 ```
 
 
@@ -141,15 +142,37 @@ table_1
 Create a trend plot to see if there is any pattern.
 
 ```{r}
-p2_df2$day <- factor(p2_df2$day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")) 
-
-p2_df2 %>% ggplot(aes(x = day, y = tot_activity, color = week, group = week)) +
+p2_df2 %>%
+  mutate(day = factor(day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
+  ggplot(aes(x = day, y = tot_activity, color = week, group = week)) +
   geom_point() + geom_line() + facet_grid(~week) +
+  labs(
+  title = "Weekly Activity Trend over 5 weeks",
+  x = "Day of the week",
+  y = "Total activity per day") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), 
         legend.position = "none")
 ```
 
 Based on the trend plot, we can see the patient reached to peak on weekend (either Saturday or Sunday) in the first two weeks, and the patient was more active on weekday in the last three weeks.
 
+#### Single-panel plot of 24-hour activity for each day of the week.
 
+```{r}
+p2_df1 %>% 
+  mutate(hour = floor((n_min - 1)/60) + 1, times = 35) %>%
+  group_by(day_id, day, hour) %>%
+  summarise(hr_activity = sum(n_activity)) %>%
+  mutate(day = factor(day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
+  ggplot(aes(x = hour, y = hr_activity, color = day, group = day_id)) +
+  geom_line(colour = grey(0.8)) + geom_smooth(se = FALSE) +
+  labs(
+    title = "24-hour Activity over 5 weeks",
+    x = "Hour of the day",
+    y = "Total activity per hour") + 
+  theme(axis.text.x = element_text(vjust = 0.5, hjust = 1)) +
+  viridis::scale_color_viridis(
+    name = "day", discrete = TRUE)
+```
 
+The single-panel plot shows the mean activity over a day has an increasing pattern as time increases. The patient are more active in the morning time and night time. On average, the most active time is around 8 pm to 9 pm. There is a zero activity on one of the Saturday and low activity on one of the Sunday during the 5 week observation period.
