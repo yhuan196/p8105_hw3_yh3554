@@ -13,6 +13,7 @@ library(lubridate)
 library(knitr)
 library(viridis)
 library(p8105.datasets)
+library(patchwork)
 ```
 
 
@@ -245,3 +246,33 @@ ny_noaa_cl %>%
 ```
 
 The average maximum temperature is around 0 to -5 Celsius in January, and 25 to 30 Celsius in July. There are some outliers in these two months. The average max temperature is lower than -10 Celsius in January 1982, January 1994, and January 2004, and higher than 10 Celsius in January 1997. Then the average max temperature is lower than 15 Celsius in July 1987, and higher than 34 Celsius in 2010.
+
+#### Plots of Max vs Min Temperature and Distribution of Snowfall Values
+
+```{r}
+tmax_tmin <- ny_noaa_cl %>%
+  filter(!is.na(tmin), !is.na(tmax)) %>%
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_hex(bins = 50) +
+  geom_smooth() +
+  labs(title = "Max Temperature vs. Min Temperature 1981-2010",
+       x = "Min Temperature in Celsius",
+       y = "Max Temperature in Celsius") +
+  viridis::scale_fill_viridis() +
+  theme(legend.position = "right")
+
+db_snowfall <- ny_noaa_cl %>%
+  filter(snow > 0, snow < 100) %>%
+  ggplot(aes(x = snow, color = factor(year))) +
+  geom_density(scale = .85) +
+  labs(title = "Distribution of Snowfall by year",
+       x = "Snowfall in mm",
+       y = "Density") +
+  viridis::scale_color_viridis(name = "Year",
+    discrete = TRUE) +
+  theme(legend.position = "none")
+  
+tmax_tmin/db_snowfall
+```
+
+The top figure is a plot of maximum temperature vs minimum temperature from 1980 to 2010. It shows most of the points fall into 20 Celsius vs 15 Celsius, and 9 Celsius vs 0 Celsius. The bottom figure is the distribution of snowfall over years and each distribution represents a year. Although the distributions are slightly different from year to year, they has a similar pattern. The highest density is between 0 mm to 25 mm, and the lowest is greater than 90 mm. It means normal snowfall is between 0 mm to 25 mm and rarely beyond 90 mm.
