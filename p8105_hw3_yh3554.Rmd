@@ -12,6 +12,7 @@ library(tidyverse)
 library(lubridate)
 library(knitr)
 library(viridis)
+library(p8105.datasets)
 ```
 
 
@@ -20,7 +21,6 @@ library(viridis)
 Load the data from `p8105.datasets`.
 
 ```{r}
-library(p8105.datasets)
 data("instacart")
 ```
 #### Exploring the dataset
@@ -208,3 +208,40 @@ ny_noaa_cl <- ny_noaa %>%
   mutate(date = ymd(date), prcp = prcp/10, tmax = as.numeric(tmax)/10, tmin = as.numeric(tmin)/10) %>% 
   mutate_at(vars(date), funs(year, month, day))
 ```
+
+#### Table of most observed values in snowfall variable
+
+```{r}
+ny_noaa_cl %>% group_by(snow) %>%
+  summarize(n = n()) %>%
+  mutate(rank = min_rank(desc(n))) %>%
+  filter(rank < 5) %>%
+  arrange(desc(n)) %>%
+  knitr::kable(col.names = c("snow_mm", "n_obs", "rank"), caption = "Most observed values of snowfall")
+```
+
+As shown in the table, the most observed value in snowfall variable is 0 mm. It implies there is no snow most of the time in New York. The next most observed value are missing values, 25 mm, and 13 mm.
+
+#### Plot of average max temperature in January and in July in each station across years
+
+```{r}
+ny_noaa_cl %>%
+  mutate(month = factor(month.name[as.integer(month)], levels = month.name)) %>%
+  filter(month %in% c("January", "July")) %>%
+  group_by(id, year, month) %>%
+  summarize(avg_tmax = mean(tmax, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = avg_tmax, color = id)) +
+  geom_line() + facet_grid(~month) + 
+  viridis::scale_color_viridis(
+    name = "id",
+    discrete = TRUE
+    ) +
+  labs(
+      title = "Avg Max Temperature in each station by year",
+      x = "Year",
+      y = "Avg Maximum Temperature in Celcius",
+    ) +
+  theme(legend.position = "none")
+```
+
+The average maximum temperature is around 0 to -5 Celsius in January, and 25 to 30 Celsius in July. There are some outliers in these two months. The average max temperature is lower than -10 Celsius in January 1982, January 1994, and January 2004, and higher than 10 Celsius in January 1997. Then the average max temperature is lower than 15 Celsius in July 1987, and higher than 34 Celsius in 2010.
